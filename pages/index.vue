@@ -1,89 +1,104 @@
 <template>
-  <v-row justify="center" align="center">
-    <v-col cols="12" sm="8" md="6">
-      <div class="text-center">
-        <logo />
-        <vuetify-logo />
-      </div>
-      <v-card>
-        <v-card-title class="headline">
-          Welcome to the Vuetify + Nuxt.js template
-        </v-card-title>
-        <v-card-text>
-          <p>Vuetify is a progressive Material Design component framework for Vue.js. It was designed to empower developers to create amazing applications.</p>
-          <p>
-            For more information on Vuetify, check out the <a
-              href="https://vuetifyjs.com"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              documentation
-            </a>.
-          </p>
-          <p>
-            If you have questions, please join the official <a
-              href="https://chat.vuetifyjs.com/"
-              target="_blank"
-              rel="noopener noreferrer"
-              title="chat"
-            >
-              discord
-            </a>.
-          </p>
-          <p>
-            Find a bug? Report it on the github <a
-              href="https://github.com/vuetifyjs/vuetify/issues"
-              target="_blank"
-              rel="noopener noreferrer"
-              title="contribute"
-            >
-              issue board
-            </a>.
-          </p>
-          <p>Thank you for developing with Vuetify and I look forward to bringing more exciting features in the future.</p>
-          <div class="text-xs-right">
-            <em><small>&mdash; John Leider</small></em>
-          </div>
-          <hr class="my-3">
-          <a
-            href="https://nuxtjs.org/"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Nuxt Documentation
-          </a>
-          <br>
-          <a
-            href="https://github.com/nuxt/nuxt.js"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Nuxt GitHub
-          </a>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn
-            color="primary"
-            nuxt
-            to="/inspire"
-          >
-            Continue
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-col>
-  </v-row>
+  <v-container>
+    <v-data-table
+      :headers="headers"
+      :items="items"
+      :options.sync="options"
+      :server-items-length="total"
+      :loading="loading"
+      class="elevation-1"
+    >
+      <template v-slot:item.logo="{item}">
+        <img style="max-width: 70px" :src="item.logo_url">
+      </template>
+      <template v-slot:item.action="{item}">
+        <nuxt-link :to="`detailed/${item.id}`">Detailed</nuxt-link>
+      </template>
+    </v-data-table>
+  </v-container>
 </template>
 
 <script>
-import Logo from '~/components/Logo.vue'
-import VuetifyLogo from '~/components/VuetifyLogo.vue'
 
 export default {
-  components: {
-    Logo,
-    VuetifyLogo
-  }
+  async asyncData({$axios}) {
+
+    let resp = await $axios.get('companies', {
+      params: {
+        page: 1,
+        per_page: 15
+      }
+    })
+
+    let items = resp.data.data
+    let total = resp.data.meta.total
+
+    return {
+      items,
+      headers: [
+        {
+          value: 'logo',
+          text: 'Logo',
+          sortable: false
+        },
+        {
+          value: 'name',
+          text: 'Name',
+          sortable: false
+        },
+        {
+          value: 'email',
+          text: 'Email',
+          sortable: false
+        },
+        {
+          value: 'website',
+          text: 'Website',
+          sortable: false
+        },
+        {
+          value: 'employees_count',
+          text: 'Total Employees',
+          sortable: false
+        },
+        {
+          value: 'action',
+          text: 'Action',
+          sortable: false
+        },
+      ],
+      loading: false,
+      total,
+      options: {
+        page: 1,
+        itemsPerPage: 15
+      }
+    }
+  },
+  watch: {
+    options: {
+      handler () {
+        this.fetchItems()
+      },
+      deep: true,
+    },
+  },
+  methods: {
+    async fetchItems() {
+
+      const { page, itemsPerPage } = this.options
+
+      let resp = await this.$axios.get('companies', {
+        params: {
+          page,
+          per_page: itemsPerPage
+        }
+      })
+
+      this.items = resp.data.data
+      this.total = resp.data.meta.total
+
+    }
+  },
 }
 </script>
